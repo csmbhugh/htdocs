@@ -19,6 +19,9 @@ if (isset($_POST['submit'])) {
         $username = mysqli_real_escape_string($con, $_POST['username']);
         $password = mysqli_real_escape_string($con, $_POST['password']);
 
+	htmlentities($username, ENT_QUOTES, 'UTF-8');
+	htmlentities($password, ENT_QUOTES, 'UTF-8');
+
         // Checking if user exists in the database and password matches
         $query = "SELECT * FROM `users` WHERE username='$username' AND password='".md5($password)."'";
         $result = mysqli_query($con, $query);
