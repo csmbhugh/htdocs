@@ -19,6 +19,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit'])) {
     $stmt->bind_param("sss", $title, $content, $image);
     $stmt->execute();
     $stmt->close();
+
+htmlentities($content, ENT_QUOTES, 'UTF-8');
+htmlentities($title, ENT_QUOTES, 'UTF-8');
    
     // Redirect back to the dashboard page after processing
     header("Location: blogs.php");
@@ -38,7 +41,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit'])) {
 <body>
 
 <div class="navbar">
-    <a href="dashboard.php" class="nav-link">Dashboard</a>
     <a href="index.php" class="w3-bar-item w3-button">Index</a>
     <a href="profile.php" class="w3-bar-item w3-button">Profile</a>
     <a href="logout.php" class="w3-bar-item w3-button">Logout</a>
