@@ -19,30 +19,40 @@ if (isset($_POST['submit'])) {
         $username = mysqli_real_escape_string($con, $_POST['username']);
         $password = mysqli_real_escape_string($con, $_POST['password']);
 
-	htmlentities($username, ENT_QUOTES, 'UTF-8');
-	htmlentities($password, ENT_QUOTES, 'UTF-8');
+        // Hash the password before using it in the query
+        $hashed_password = hash('sha256', $password);
 
-        // Checking if user exists in the database and password matches
-        $query = "SELECT * FROM `users` WHERE username='$username' AND password='".md5($password)."'";
+        // Checking if user exists in the database
+        $query = "SELECT * FROM `users` WHERE username='$username'";
         $result = mysqli_query($con, $query);
 
         if (mysqli_num_rows($result) == 1) {
-            $_SESSION['IS_LOGIN'] = 'yes';
-            $_SESSION['username'] = $username;
-            
-            // Reset login attempts for this IP
-            mysqli_query($con, "DELETE FROM loginlogs WHERE IpAddress='$ip_address'");
-            
-            header("Location: index.php");
-            exit();
+            $user_data = mysqli_fetch_assoc($result);
+			
+			$stored_password = $user_data['password'];
+			
+            // Compare hashed password from the database with the provided hashed password
+            if ($hashed_password === $stored_password) {
+                $_SESSION['IS_LOGIN'] = 'yes';
+                $_SESSION['username'] = $username;
+
+                // Reset login attempts for this IP
+                mysqli_query($con, "DELETE FROM loginlogs WHERE IpAddress='$ip_address'");
+
+                header("Location: index.php");
+                exit();
+            } else {
+                // Insert login attempt with timestamp
+                mysqli_query($con, "INSERT INTO loginlogs (IpAddress, TryTime) VALUES ('$ip_address', NOW())");
+
+                $msg = "Please enter valid login details.";
+            }
         } else {
-            // Insert login attempt with timestamp
-            mysqli_query($con, "INSERT INTO loginlogs (IpAddress, TryTime) VALUES ('$ip_address', NOW())");
-            
-            $msg = "Please enter valid login details.";
+            $msg = "User does not exist.";
         }
     }
 }
+
 
 // Function to get the client's IP address
 function getIpAddr(){
