@@ -1,4 +1,5 @@
 <?php
+error_reporting(0);
 session_start();
 require('db.php');
 use PHPMailer\PHPMailer\PHPMailer;
@@ -27,15 +28,24 @@ if (isset($_POST['submit'])) {
     } else {
         $username = mysqli_real_escape_string($con, $_POST['username']);
         $password = mysqli_real_escape_string($con, $_POST['password']);
-
+		
+		$hashed_password = hash('sha256', $password);
         // Checking if user exists in the database and password matches
-        $query = "SELECT * FROM `users` WHERE username='$username' AND password='".md5($password)."'";
+        
+		$query = "SELECT * FROM `users` WHERE username='$username'";
         $result = mysqli_query($con, $query);
 
         if (mysqli_num_rows($result) == 1) {
-            $_SESSION['IS_LOGIN'] = 'yes';
-            $_SESSION['username'] = $username;
+			$user_data = mysqli_fetch_assoc($result);
             
+            
+			$stored_password = $user_data['password'];
+			
+            // Compare hashed password from the database with the provided hashed password
+            if ($hashed_password === $stored_password) {
+                $_SESSION['IS_LOGIN'] = 'yes';
+                $_SESSION['username'] = $username;
+				
             // Reset login attempts for this IP
             mysqli_query($con, "DELETE FROM loginlogs WHERE IpAddress='$ip_address'");
             
@@ -46,8 +56,11 @@ if (isset($_POST['submit'])) {
             mysqli_query($con, "INSERT INTO loginlogs (IpAddress, TryTime) VALUES ('$ip_address', NOW())");
             
             $msg = "Please enter valid login details.";
-        }
+          }
+		} else {
+				$msg = "User does not exist.";
     }
+	}
 }
 
 // Function to get the client's IP address
@@ -113,19 +126,18 @@ VALUES ('$username', '$token', '$email', '$trn_date')";
         $result = mysqli_query($con,$query);
         if($result){
             echo "<div class='form'>
-<h3>Your reset token has been sent.";
+<h3>Your reset token could not be sent, your email is invalid.";
         }
     }else{
 		echo "<div class='form'>
-<h3>Your reset token could not be sent, your username or email is invalid.</h3></div>";
+<h3>Your reset token has been sent.</h3></div>";
 	}
 ?>
 
 
 <form action="new_registration.php" method="post">
 <p>Enter details to reset password</p>
-username: <input type="text" name="username" required ><br>
-email: <input type="text" name="email" required><br>
+<input type="text" name="email" placeholder="Email" required><br>
 <input type="submit">
 </form>
 
@@ -136,9 +148,9 @@ email: <input type="text" name="email" required><br>
   // collect value of input field
   $emailReset = $_POST['email'];
   if (empty($emailReset)) {
-    echo "Name is empty";
+    echo "Invalid email.";
   } else {
-    echo $emailReset;
+    
   }
 }
 
@@ -163,17 +175,11 @@ try {
     $mail->addAddress("$emailReset", 'Joe User');     //Add a recipient
     
     $mail->addReplyTo('resetlink10@gmail.com', 'Password Reset');
-    
-
-    //Attachments
-    //$mail->addAttachment('/var/tmp/file.tar.gz');         //Add attachments
-    //$mail->addAttachment('/tmp/image.jpg', 'new.jpg');    //Optional name
 
     //Content
     $mail->isHTML(true);                                  //Set email format to HTML
     $mail->Subject = 'Password reset';
     $mail->Body    = "This is your token number <b>$token</b><h3>https://localhost/password_reset.php</h3>";
-    //$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
 
     $mail->send();
     echo '<h3>Follow the link to reset your password.</h3>';
