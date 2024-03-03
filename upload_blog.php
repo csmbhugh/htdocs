@@ -19,9 +19,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit'])) {
     $stmt->bind_param("sss", $title, $content, $image);
     $stmt->execute();
     $stmt->close();
-
-htmlentities($content, ENT_QUOTES, 'UTF-8');
-htmlentities($title, ENT_QUOTES, 'UTF-8');
    
     // Redirect back to the dashboard page after processing
     header("Location: blogs.php");
